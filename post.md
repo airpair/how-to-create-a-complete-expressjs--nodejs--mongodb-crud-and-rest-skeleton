@@ -281,7 +281,7 @@ router.route('/')
     //GET all blobs
 	.get(function(req, res, next) {
 	    //retrieve all blobs from Monogo
-	    mongoose.model('Blob').find({}, function (err, infophotos) {
+	    mongoose.model('Blob').find({}, function (err, blobs) {
 		  	if (err) {
 		  		return console.error(err);
 		  	} else {
@@ -422,32 +422,32 @@ router.put('/:id', function(req, res) {
 	var company = req.body.company;
 	var isloved = req.body.isloved;
 
-    //find the document by ID
-	mongoose.model('Blob').findById(req.id, function (err, blob) {
-	    //update it
-		blob.update({
-	    	name : name,
-	    	badge : badge,
-	    	dob : dob,
-	    	isloved : isloved
-	    }, function (err, blob) {
-		  if (err) {
-		  	res.send("There was a problem updating the information to the database: " + err);
-		  } 
-		  else {
-		  		//HTML responds by going back to the page or you can be fancy and create a new view that shows a success page.
-		  		res.format({
-		  			html: function(){
-					   	res.redirect("/blobs/" + blob._id);
-				 	},
-				 	//JSON responds showing the updated values
-					json: function(){
-				   		res.json(blob);
-				 	}
-		  		});
-	       }
-		})
-	});
+   //find the document by ID
+	    mongoose.model('Blob').findById(req.id, function (err, blob) {
+	        //update it
+	        blob.update({
+	            name : name,
+	            badge : badge,
+	            dob : dob,
+	            isloved : isloved
+	        }, function (err, blobID) {
+	          if (err) {
+	              res.send("There was a problem updating the information to the database: " + err);
+	          } 
+	          else {
+	                  //HTML responds by going back to the page or you can be fancy and create a new view that shows a success page.
+	                  res.format({
+	                      html: function(){
+	                           res.redirect("/blobs/" + blob._id);
+	                     },
+	                     //JSON responds showing the updated values
+	                    json: function(){
+	                           res.json(blob);
+	                     }
+	                  });
+	           }
+	        })
+	    });
 });
 ```
 
@@ -518,7 +518,7 @@ extends ../layout
 
 block content
     h1.
-         {#title}
+         #{title}
     ul
         - each blob, i in blobs
             li
@@ -540,32 +540,34 @@ As you can probably guess, we still need a way to add Blobs via a form. Create a
 extends ../layout
 
 block content
-  h1= title
-  form#formAddBlob(name="addblob",method="post",action="/blobs")
-      input#inputName(type="text", placeholder="ex. John Smith", name="name")
-      input#inputBadge(type="number", placeholder="ex. 123456", name="badge")
-      input#inputDob(type="date", name="dob")
-      input#inputIsLoved(type="checkbox", name="isloved")
-      button#btnSubmit(type="submit") submit
+	h1.
+		#{title}
+	form#formAddBlob(name="addblob",method="post",action="/blobs")
+		input#inputName(type="text", placeholder="ex. John Smith", name="name")
+		input#inputBadge(type="number", placeholder="ex. 123456", name="badge")
+		input#inputDob(type="date", name="dob")
+		input#inputIsLoved(type="checkbox", name="isloved")
+		button#btnSubmit(type="submit") submit
 ```
 
-Lastly, we need a form that shows the pre-populated data and allows us to manipulate it and update it via PUT.
+Lastly, we need a form that shows the pre-populated data and allows us to manipulate it and update it via PUT. Create a new file called `edit.jade` that will be accessible by /blobs/:id
 ```jade
 extends ../layout
 
 block content
-    h1.
-        Blob #{blob._id}
-    form(action='/blobs/#{blob._id}',method='post',name='updateblob',enctype='application/x-www-form-urlencoded')
-      input#inputName(type='text', value='#{blob.name}', name='name')
-      input#inputBadge(type='number', value='#{blob.badge}', name='badge')
-      input#inputDob(type='date', value='#{blob.dob}', name='dob')
-      input#inputIsLoved(type='checkbox', name='isloved', checked=('#{isloved.newsletter}'==='true' ? "checked" : undefined))
-      input(type='hidden',value='PUT',name='_method')
-      button#btnSubmit(type='submit').
-        Update
+	h1.
+		Blob ID #{blob._id}
+	form(action='/blobs/#{blob._id}',method='post',name='updateblob',enctype='application/x-www-form-urlencoded')
+		input#inputName(type='text', value='#{blob.name}', name='name')
+		input#inputBadge(type='number', value='#{blob.badge}', name='badge')
+		input#inputDob(type='date', value='#{blob.dob}', name='dob')
+		input#inputIsLoved(type='checkbox', name='isloved', checked=('#{blob.isloved}'==='true' ? "checked" : undefined))
+		input(type='hidden',value='PUT',name='_method')
+		button#btnSubmit(type='submit').
+			Update
 ```
 
+##You Did It!
 Whew... that's it! Congrats! You've officially created an entire CRUD application with all the usual REST calls baked in. Now you can fire up your server with `npm start` and begin adding new Blobs!
 
 Here is what your folder structure should look like:
@@ -605,3 +607,5 @@ nodewebapp
         │   index.jade
         |   new.jade
 ```
+
+Is something not working correctly? Check out my [express-node-mongo-skeleton](https://github.com/kacole2/express-node-mongo-skeleton "express-node-mongo-skeleton" so you can see everything in its entirety. 
