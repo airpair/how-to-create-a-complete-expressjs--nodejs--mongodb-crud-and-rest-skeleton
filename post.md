@@ -387,26 +387,30 @@ Now we need to GET an individual blob. We will wire this up later with an `edit.
 //GET the individual blob by Mongo ID
 router.get('/:id', function(req, res) {
     //search for the blob within Mongo
-	mongoose.model('Blob').findById(req.id, function (err, blob) {
-		if (err) {
-			console.log('GET Error: There was a problem retrieving: ' + err);
-		} else {
-		    //Return the blob
-			console.log('GET Retrieving ID: ' + blob._id);
-			res.format({
-			    //HTML response will render the 'edit.jade' template
-				html: function(){
-				   	res.render('blobs/edit', {
-				  		title: 'Blob' + blob._id,
-				  		"blob" : blob
-			  		});
-			 	},
-			 	//JSON response will return the JSON output
-				json: function(){
-			   		res.json(blob);
-			 	}
-			});
-		}
+    mongoose.model('Blob').findById(req.id, function (err, blob) {
+	    if (err) {
+	        console.log('GET Error: There was a problem retrieving: ' + err);
+	    } else {
+	        //Return the blob
+	        console.log('GET Retrieving ID: ' + blob._id);
+	        //format the date properly for the value to show correctly in our edit form
+	      var blobdob = blob.dob.toISOString();
+	      blobdob = blobdob.substring(0, blobdob.indexOf('T'))
+	        res.format({
+	            //HTML response will render the 'edit.jade' template
+	            html: function(){
+	                   res.render('blobs/edit', {
+	                      title: 'Blob' + blob._id,
+	                    "blobdob" : blobdob,
+	                      "blob" : blob
+	                  });
+	             },
+	             //JSON response will return the JSON output
+	            json: function(){
+	                   res.json(blob);
+	             }
+	        });
+	    }
 	});
 });
 ```
