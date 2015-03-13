@@ -612,4 +612,4 @@ nodewebapp
         |   new.jade
 ```
 
-Is something not working correctly? Check out my [express-node-mongo-skeleton](https://github.com/kacole2/express-node-mongo-skeleton "express-node-mongo-skeleton" so you can see everything in its entirety. 
+Is something not working correctly? Check out my [express-node-mongo-skeleton](https://github.com/kacole2/express-node-mongo-skeleton "express-node-mongo-skeleton") so you can see everything in its entirety. 
