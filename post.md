@@ -382,10 +382,38 @@ router.param('id', function(req, res, next, id) {
 });
 ```
 
-Now we need to GET an individual blob. We will wire this up later with an `edit.jade` form. This example shows how to grab it by ID.
+Now we need to GET an individual blob to display it. We will wire this up later with an `show.jade` form. This example shows how to grab it by ID.
+
+```javascript,linenums=true
+router.route('/:id')
+  .get(function(req, res) {
+    mongoose.model('Blob').findById(req.id, function (err, blob) {
+      if (err) {
+        console.log('GET Error: There was a problem retrieving: ' + err);
+      } else {
+        console.log('GET Retrieving ID: ' + blob._id);
+        var blobdob = blob.dob.toISOString();
+        blobdob = blobdob.substring(0, blobdob.indexOf('T'))
+        res.format({
+          html: function(){
+              res.render('blobs/show', {
+                "blobdob" : blobdob,
+                "blob" : blob
+              });
+          },
+          json: function(){
+              res.json(blob);
+          }
+        });
+      }
+    });
+  });
+```
+
+Next, we need a way to edit and update our document through a standard web form. We will wire this up with `edit.jade` a bit later on (NOTE: please review the final code at [express-node-mongo-skeleton on  GitHub](https://github.com/kacole2/express-node-mongo-skeleton "express-node-mongo-skeleton") to see how GET, PUT, and DELETE can be combined for the `/:id/edit` pieces.)
 ```javascript,linenums=true
 //GET the individual blob by Mongo ID
-router.get('/:id', function(req, res) {
+router.get('/:id/edit', function(req, res) {
     //search for the blob within Mongo
     mongoose.model('Blob').findById(req.id, function (err, blob) {
 	    if (err) {
@@ -418,7 +446,7 @@ router.get('/:id', function(req, res) {
 PUT is used to update the blob in case we need to make changes. This put accepts REST and form POST requests. This looks eerily similar to POST from earlier because we are basically doing the same thing. Take values, assign values, and then update values. 
 ```javascript,linenums=true
 //PUT to update a blob by ID
-router.put('/:id', function(req, res) {
+router.put('/:id/edit', function(req, res) {
 	// Get our REST or form values. These rely on the "name" attributes
     var name = req.body.name;
 	var badge = req.body.badge;
@@ -458,7 +486,7 @@ router.put('/:id', function(req, res) {
 DELETE is a pretty crucial part of CRUD. As usual, this will be accepted by REST and POSTs from a form
 ```javascript,linenums=true
 //DELETE a Blob by ID
-router.delete('/:id', function (req, res){
+router.delete('/:id/edit', function (req, res){
     //find blob by ID
 	mongoose.model('Blob').findById(req.id, function (err, blob) {
 		if (err) {
@@ -531,12 +559,17 @@ block content
                 = blob.dob
                 = blob.isloved
                 = blob._id
-                form(action='/blobs/#{blob._id}',method='post',enctype='application/x-www-form-urlencoded')
+                form(action='/blobs/#{blob._id}/edit',method='post',enctype='application/x-www-form-urlencoded')
                     input(type='hidden',value='DELETE',name='_method')
                     button(type='submit').
                         Delete
-                a(href='/blobs/#{blob._id}') Edit
+                p 
+                    a(href='/blobs/#{blob._id}/edit') Edit
+                p
+                    a(href='/blobs/#{blob._id}') Show
 ```
+![All Blobs](https://s3.amazonaws.com/kennyonetime/blob_all.png "All Blobs")
+
 
 As you can probably guess, we still need a way to add Blobs via a form. Create a new file called `new.jade`. This page is accessible from `/blobs/new`.
 
@@ -547,14 +580,35 @@ block content
 	h1.
 		#{title}
 	form#formAddBlob(name="addblob",method="post",action="/blobs")
-		input#inputName(type="text", placeholder="ex. John Smith", name="name")
-		input#inputBadge(type="number", placeholder="ex. 123456", name="badge")
-		input#inputDob(type="date", name="dob")
-		input#inputIsLoved(type="checkbox", name="isloved")
-		button#btnSubmit(type="submit") submit
+		p Name: 
+			input#inputName(type="text", placeholder="ex. John Smith", name="name")
+		p Badge:
+			input#inputBadge(type="number", placeholder="ex. 123456", name="badge")
+		p DOB: 
+			input#inputDob(type="date", name="dob")
+		p Are You Loved?: 
+			input#inputIsLoved(type="checkbox", name="isloved")
+		p
+			button#btnSubmit(type="submit") submit
 ```
+![New Blob](https://s3.amazonaws.com/kennyonetime/blob_new.png "New Blob")
 
-Lastly, we need a form that shows the pre-populated data and allows us to manipulate it and update it via PUT. Create a new file called `edit.jade` that will be accessible by /blobs/:id
+
+To show an individual blob we need to use `show.jade`. This page is accessible from `/blobs/:id`.
+```jade
+extends ../layout
+
+block content
+    h1.
+        Infophoto #{blob._id}
+    p Name: #{blob.name}
+    p Badge: #{blob.badge}
+    p DOB: #{blobdob}
+    p Is Loved: #{blob.isloved}
+```
+![Show Blobs](https://s3.amazonaws.com/kennyonetime/blob_show.png "show Blob")
+
+Lastly, we need a form that shows the pre-populated data and allows us to manipulate it and update it via PUT. Create a new file called `edit.jade` that will be accessible by `/blobs/:id/edit`
 ```jade
 extends ../layout
 
@@ -562,14 +616,22 @@ block content
 	h1.
 		Blob ID #{blob._id}
 	form(action='/blobs/#{blob._id}',method='post',name='updateblob',enctype='application/x-www-form-urlencoded')
-		input#inputName(type='text', value='#{blob.name}', name='name')
-		input#inputBadge(type='number', value='#{blob.badge}', name='badge')
-		input#inputDob(type='date', value='#{blob.dob}', name='dob')
-		input#inputIsLoved(type='checkbox', name='isloved', checked=('#{blob.isloved}'==='true' ? "checked" : undefined))
-		input(type='hidden',value='PUT',name='_method')
-		button#btnSubmit(type='submit').
-			Update
+		p Name: 
+			input#inputName(type='text', value='#{blob.name}', name='name')
+		p Badge: 
+			input#inputBadge(type='number', value='#{blob.badge}', name='badge')
+		p DOB: 
+			input#inputDob(type='date', value='#{blobdob}', name='dob')
+		p Are you Loved?: 
+			input#inputIsLoved(type='checkbox', name='isloved', checked=('#{blob.isloved}'==='true' ? "checked" : undefined))
+		p 
+			input(type='hidden',value='PUT',name='_method')
+		p 
+			button#btnSubmit(type='submit').
+				Update
 ```
+![Edit Blob](https://s3.amazonaws.com/kennyonetime/blob_edit.png "Edit Blob")
+
 
 ##You Did It!
 Whew... that's it! Congrats! You've officially created an entire CRUD application with all the usual REST calls baked in. Now you can fire up your server with `npm start` and begin adding new Blobs!
