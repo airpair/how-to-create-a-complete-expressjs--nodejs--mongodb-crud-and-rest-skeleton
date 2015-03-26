@@ -615,7 +615,7 @@ extends ../layout
 block content
 	h1.
 		Blob ID #{blob._id}
-	form(action='/blobs/#{blob._id}',method='post',name='updateblob',enctype='application/x-www-form-urlencoded')
+	form(action='/blobs/#{blob._id}/edit',method='post',name='updateblob',enctype='application/x-www-form-urlencoded')
 		p Name: 
 			input#inputName(type='text', value='#{blob.name}', name='name')
 		p Badge: 
